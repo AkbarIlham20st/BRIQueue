@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teller Interface</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="teller-container">
+    <h1 id="teller-name">Teller</h1>
+    <div class="current-queue">
+      <h2>Antrian Saat Ini</h2>
+      <div id="current-queue-number">-</div>
+      <div id="current-queue-time">-</div>
+    </div>
+    
+    <div class="controls">
+      <button id="next-btn" class="btn btn-primary">Next</button>
+      <button id="recall-btn" class="btn btn-secondary">Recall</button>
+      <button id="complete-btn" class="btn btn-complete" disabled>Selesai</button>
+    </div>
+    
+    <div class="queue-list">
+      <h3>Daftar Antrian</h3>
+      <ul id="queue-list"></ul>
+    </div>
+  </div>
+
+  <audio id="bell-sound" src="/sounds/bell.mp3"></audio>
+  <audio id="queue-sound"></audio>
+
+  <script src="/js/teller.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="admin-container">
+    <header>
+      <h1>Admin Dashboard</h1>
+      <button id="logout-btn" class="btn btn-secondary">Logout</button>
+    </header>
+    
+    <div class="admin-sections">
+      <!-- Video Management -->
+      <section class="admin-section">
+        <h2>Video Management</h2>
+        
+        <div class="add-video-form">
+          <h3>Tambah Video Baru</h3>
+          <form id="add-video-form">
+            <div class="form-group">
+              <label for="video-url">Video URL (YouTube/MP4)</label>
+              <input type="text" id="video-url" required>
+            </div>
+            <div class="form-group">
+              <label for="video-duration">Durasi (detik)</label>
+              <input type="number" id="video-duration" min="10" value="30" required>
+            </div>
+            <div class="form-group">
+              <label for="video-order">Urutan Tampil</label>
+              <input type="number" id="video-order" min="1" value="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Tambah Video</button>
+          </form>
+        </div>
+        
+        <div class="video-list">
+          <h3>Daftar Video</h3>
+          <ul id="video-list"></ul>
+        </div>
+      </section>
+      
+      <!-- Currency Rates -->
+      <section class="admin-section">
+        <h2>Kurs Mata Uang</h2>
+        
+        <div id="currency-form-container">
+          <form id="currency-form">
+            <div id="currency-fields">
+              <!-- Fields will be added dynamically -->
+            </div>
+            <button type="submit" class="btn btn-primary">Update Kurs</button>
+          </form>
+        </div>
+      </section>
+      
+      <!-- Information Text -->
+      <section class="admin-section">
+        <h2>Informasi Singkat</h2>
+        
+        <form id="info-form">
+          <div class="form-group">
+            <label for="info-text">Teks Informasi (max 200 karakter)</label>
+            <textarea id="info-text" maxlength="200" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Informasi</button>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>
