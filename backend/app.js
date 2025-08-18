@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const tellerRoutes = require('./routes/tellerRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const queuesRoutes = require('./routes/queuesRoutes');
 const displayRoutes = require('./routes/displayRoutes');
 const { pool } = require('./config/db');
 
@@ -20,6 +21,7 @@ app.set('trust proxy', true);
 // Routes
 app.use('/api/teller', tellerRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/admin', queuesRoutes);
 app.use('/api/display', displayRoutes);
 
 // Test database connection

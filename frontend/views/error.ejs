@@ -1,0 +1,30 @@
+<!-- frontend/views/error.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error-container { max-width: 800px; margin: 0 auto; }
+        .error-header { color: #d32f2f; }
+        .error-details { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1 class="error-header">Error <%= status %></h1>
+        <p><%= message %></p>
+        
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error-details">
+                <h3>Error Details:</h3>
+                <pre><%= error.stack || error %></pre>
+            </div>
+        <% } %>
+        
+        <a href="/">Kembali ke Beranda</a>
+    </div>
+</body>
+</html>

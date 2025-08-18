@@ -1,0 +1,153 @@
+<div class="video-management">
+  <h2>Video Management</h2>
+  
+  <!-- Upload Form -->
+  <div class="upload-section">
+    <h3>Upload New Video</h3>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Video File (MP4, max 50MB)</label>
+        <input type="file" id="videoInput" name="videoFile" accept="video/mp4" required>
+        <video id="videoPreview" controls style="display:none;"></video>
+      </div>
+      
+      <div class="form-group">
+        <label>Duration (seconds)</label>
+        <input type="number" name="duration" min="5" value="30" required>
+      </div>
+      
+      <button type="submit" class="btn-primary">Upload Video</button>
+      <div id="uploadStatus"></div>
+    </form>
+  </div>
+  
+  <!-- Video List -->
+  <div class="video-list-section">
+    <h3>Video List</h3>
+    <div id="videoList" class="sortable-list">
+      <!-- Videos will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // Preview video before upload
+  document.getElementById('videoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('videoPreview');
+    
+    if (file) {
+      preview.style.display = 'block';
+      preview.src = URL.createObjectURL(file);
+    }
+  });
+
+  // Load videos on page load
+  document.addEventListener('DOMContentLoaded', loadVideos);
+
+  // Function to load videos
+  function loadVideos() {
+    fetch('/admin/api/videos')
+      .then(res => res.json())
+      .then(videos => {
+        const videoList = document.getElementById('videoList');
+        videoList.innerHTML = '';
+        
+        videos.forEach(video => {
+          const videoItem = document.createElement('div');
+          videoItem.className = 'video-item';
+          videoItem.dataset.id = video.id;
+          
+          videoItem.innerHTML = `
+            <div class="video-preview">
+              <video src="${video.content_value}" controls></video>
+            </div>
+            <div class="video-info">
+              <p>Duration: ${video.duration}s</p>
+              <p>Order: ${video.display_order}</p>
+            </div>
+            <div class="video-actions">
+              <button onclick="deleteVideo(${video.id})" class="btn-danger">Delete</button>
+            </div>
+          `;
+          
+          videoList.appendChild(videoItem);
+        });
+        
+        // Initialize sortable (jQuery UI)
+        $('.sortable-list').sortable({
+          update: function() {
+            const videos = [];
+            $('.video-item').each(function(index) {
+              videos.push({
+                id: $(this).data('id'),
+                order: index + 1
+              });
+            });
+            
+            updateVideoOrder(videos);
+          }
+        });
+      });
+  }
+
+  // Upload video
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('videoFile', document.getElementById('videoInput').files[0]);
+    formData.append('duration', e.target.duration.value);
+    formData.append('displayOrder', 999); // Default order
+    
+    fetch('/admin/api/videos/upload', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('uploadStatus').innerHTML = `
+          <div class="alert success">Video uploaded successfully!</div>
+        `;
+        loadVideos();
+        e.target.reset();
+        document.getElementById('videoPreview').style.display = 'none';
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    })
+    .catch(error => {
+      document.getElementById('uploadStatus').innerHTML = `
+        <div class="alert error">Error: ${error.message}</div>
+      `;
+    });
+  });
+
+  // Delete video
+  window.deleteVideo = function(id) {
+    if (confirm('Are you sure you want to delete this video?')) {
+      fetch(`/admin/api/videos/${id}`, {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadVideos();
+        }
+      });
+    }
+  };
+
+  // Update video order
+  function updateVideoOrder(videos) {
+    fetch('/admin/api/videos/order', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ videos })
+    })
+    .catch(error => console.error('Order update error:', error));
+  }
+</script>

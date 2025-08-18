@@ -30,7 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load display data
   function loadDisplayData() {
     fetch('/api/display')
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
       .then(data => {
         updateActiveQueues(data.activeQueues);
         updateCurrencyRates(data.currencyRates);
@@ -39,27 +42,47 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(error => {
         console.error('Error loading display data:', error);
+        // Fallback content if API fails
+        showFallbackContent();
       });
+  }
+  
+  // Show fallback content when API fails
+  function showFallbackContent() {
+    activeQueuesEl.innerHTML = '<div class="no-queue">Sistem antrian sedang offline</div>';
+    currencyTableBody.innerHTML = `
+      <tr><td colspan="3">Data kurs tidak tersedia</td></tr>
+    `;
+    infoTextEl.textContent = 'Selamat datang di Bank Kami. Mohon maaf atas ketidaknyamanan ini.';
+    
+    // Fallback video
+    if (videoElements.length === 0) {
+      videoContainer.innerHTML = `
+        <video class="display-video" autoplay muted loop>
+          <source src="/uploads/videos/video1.mp4" type="video/mp4">
+          Browser Anda tidak mendukung pemutaran video.
+        </video>
+      `;
+    }
   }
   
   // Update active queues display
   function updateActiveQueues(queues) {
-    activeQueuesEl.innerHTML = '';
-    
-    const calledQueues = queues.filter(q => q.status === 'Dipanggil');
-    
-    if (calledQueues.length === 0) {
+    if (!queues || queues.length === 0) {
       activeQueuesEl.innerHTML = '<div class="no-queue">Tidak ada antrian yang dipanggil</div>';
       return;
     }
     
-    calledQueues.forEach(queue => {
+    activeQueuesEl.innerHTML = '';
+    
+    queues.forEach(queue => {
       const queueEl = document.createElement('div');
       queueEl.className = 'active-queue';
       
       queueEl.innerHTML = `
         <div class="queue-number">${queue.queue_number}</div>
-        <div class="queue-teller">${queue.teller_name}</div>
+        <div class="queue-teller">${queue.teller_name || 'Teller'}</div>
+        <div class="queue-counter">Loket ${queue.counter_number || ''}</div>
       `;
       
       activeQueuesEl.appendChild(queueEl);
@@ -70,13 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateCurrencyRates(rates) {
     currencyTableBody.innerHTML = '';
     
+    if (!rates || rates.length === 0) {
+      currencyTableBody.innerHTML = '<tr><td colspan="3">Data kurs sedang diperbarui</td></tr>';
+      return;
+    }
+    
     rates.forEach(rate => {
       const row = document.createElement('tr');
       
       row.innerHTML = `
         <td>${rate.currency_code}</td>
-        <td>${rate.buy_rate.toLocaleString('id-ID')}</td>
-        <td>${rate.sell_rate.toLocaleString('id-ID')}</td>
+        <td>${rate.buy_rate?.toLocaleString('id-ID') || '-'}</td>
+        <td>${rate.sell_rate?.toLocaleString('id-ID') || '-'}</td>
       `;
       
       currencyTableBody.appendChild(row);
@@ -85,88 +113,107 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Update info text
   function updateInfoText(contents) {
-    const infoContent = contents.find(c => c.content_type === 'info');
-    if (infoContent) {
-      infoTextEl.textContent = infoContent.content_value;
-    } else {
+    if (!contents || contents.length === 0) {
       infoTextEl.textContent = 'Selamat datang di Bank Kami. Terima kasih atas kunjungan Anda.';
+      return;
     }
+    
+    const infoContent = contents.find(c => c.content_type === 'info');
+    infoTextEl.textContent = infoContent?.content_value || 
+      'Selamat datang di Bank Kami. Terima kasih atas kunjungan Anda.';
   }
   
-  // Setup videos
+  // Setup videos from database
   function setupVideos(contents) {
-    // Clear existing videos
+    // Clear existing videos and timeouts
     videoContainer.innerHTML = '';
     videoElements = [];
     clearTimeout(videoTimeout);
     
-    const videoContents = contents.filter(c => c.content_type === 'video');
+    // Filter and sort video contents
+    const videoContents = (contents || [])
+      .filter(c => c.content_type === 'video' && c.is_active)
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
     
     if (videoContents.length === 0) {
-      // Default video if none configured
-      videoContainer.innerHTML = `
-        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1" 
-                frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-      `;
+      showDefaultVideo();
       return;
     }
     
     // Create video elements
     videoContents.forEach((video, index) => {
-      let videoEl;
-      
-      if (video.content_value.includes('youtube.com') || video.content_value.includes('youtu.be')) {
-        // YouTube video
-        const videoId = video.content_value.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)[1];
-        videoEl = document.createElement('iframe');
-        videoEl.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}`;
-        videoEl.setAttribute('frameborder', '0');
-        videoEl.setAttribute('allow', 'autoplay; encrypted-media');
-        videoEl.setAttribute('allowfullscreen', '');
-      } else {
-        // MP4 video
-        videoEl = document.createElement('video');
-        videoEl.src = video.content_value;
-        videoEl.autoplay = true;
-        videoEl.muted = true;
-        videoEl.loop = false;
-      }
-      
+      const videoEl = document.createElement('video');
       videoEl.className = 'display-video';
+      videoEl.src = video.content_value;
+      videoEl.autoplay = index === 0;
+      videoEl.muted = true;
+      videoEl.loop = false;
       videoEl.style.display = index === 0 ? 'block' : 'none';
+      
+      videoEl.addEventListener('loadedmetadata', () => {
+        console.log(`Video loaded: ${video.content_value} (Duration: ${video.duration}s)`);
+      });
+      
+      videoEl.addEventListener('error', (e) => {
+        console.error('Error loading video:', video.content_value, e);
+      });
+      
       videoContainer.appendChild(videoEl);
       
       videoElements.push({
         element: videoEl,
-        duration: video.duration * 1000 || 30000 // default to 30 seconds
+        duration: (video.duration || 30) * 1000 // Convert to milliseconds
       });
     });
     
-    // Start video rotation
-    rotateVideos();
+    // Start video rotation if we have videos
+    if (videoElements.length > 0) {
+      rotateVideos();
+    } else {
+      showDefaultVideo();
+    }
   }
   
-  // Rotate videos
+  // Show default video when no videos configured
+  function showDefaultVideo() {
+    videoContainer.innerHTML = `
+      <video class="display-video" autoplay muted loop>
+        <source src="/videos/default.mp4" type="video/mp4">
+        Browser Anda tidak mendukung pemutaran video.
+      </video>
+    `;
+  }
+  
+  // Rotate videos based on duration from database
   function rotateVideos() {
     if (videoElements.length === 0) return;
     
     // Hide current video
     videoElements.forEach(video => {
       video.element.style.display = 'none';
+      video.element.pause();
     });
     
-    // Show next video
+    // Move to next video (with loop)
     currentVideoIndex = (currentVideoIndex + 1) % videoElements.length;
-    videoElements[currentVideoIndex].element.style.display = 'block';
+    const currentVideo = videoElements[currentVideoIndex];
     
-    // If it's a video element (not iframe), replay it
-    if (videoElements[currentVideoIndex].element.tagName.toLowerCase() === 'video') {
-      videoElements[currentVideoIndex].element.currentTime = 0;
-      videoElements[currentVideoIndex].element.play();
+    // Show and play next video
+    currentVideo.element.style.display = 'block';
+    currentVideo.element.currentTime = 0;
+    
+    const playPromise = currentVideo.element.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.error('Video play failed:', error);
+        // Skip to next video if playback fails
+        videoTimeout = setTimeout(rotateVideos, 1000);
+      });
     }
     
-    // Schedule next rotation
-    videoTimeout = setTimeout(rotateVideos, videoElements[currentVideoIndex].duration);
+    // Schedule next rotation based on duration from database
+    videoTimeout = setTimeout(rotateVideos, currentVideo.duration);
   }
   
   // Initial load
@@ -174,4 +221,33 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Poll for updates every 5 seconds
   setInterval(loadDisplayData, 5000);
+  
+  // Handle visibility change to pause/resume videos
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Page is hidden, pause videos
+      clearTimeout(videoTimeout);
+      videoElements.forEach(video => {
+        video.element.pause();
+      });
+    } else {
+      // Page is visible again, resume playback
+      if (videoElements.length > 0 && videoElements[currentVideoIndex]) {
+        videoElements[currentVideoIndex].element.play()
+          .then(() => {
+            // Restart rotation timer
+            const elapsed = Date.now() - lastRotationTime;
+            const remaining = Math.max(0, videoElements[currentVideoIndex].duration - elapsed);
+            videoTimeout = setTimeout(rotateVideos, remaining);
+          })
+          .catch(error => {
+            console.error('Resume playback failed:', error);
+            rotateVideos(); // Force rotate if resume fails
+          });
+      }
+    }
+  });
+  
+  // Track last rotation time for resume
+  let lastRotationTime = Date.now();
 });

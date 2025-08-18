@@ -129,14 +129,29 @@ app.use((req, res) => {
   });
 });
 
-// 500 Server Error
+// Error handler middleware
 app.use((err, req, res, next) => {
-  console.error('🔥 Server Error:', err.stack);
-  res.status(500).render('error', {
-    title: 'Server Error',
-    message: 'Terjadi kesalahan sistem',
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-  });
+    // Log error
+    console.error('[ERROR]', err.stack);
+    
+    // Determine status code
+    const status = err.status || 500;
+    
+    // Render error page
+    res.status(status).render('error', {
+        status: status,
+        message: err.message || 'Terjadi kesalahan pada server',
+        error: process.env.NODE_ENV === 'development' ? err : null
+    });
+});
+
+// 404 handler
+app.use((req, res, next) => {
+    res.status(404).render('error', {
+        status: 404,
+        message: 'Halaman tidak ditemukan',
+        error: null
+    });
 });
 
 // ================= START SERVER ================= //

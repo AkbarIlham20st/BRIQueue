@@ -4,73 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
-  <div class="admin-container">
-    <header>
-      <h1>Admin Dashboard</h1>
-      <button id="logout-btn" class="btn btn-secondary">Logout</button>
-    </header>
-    
-    <div class="admin-sections">
-      <!-- Video Management -->
-      <section class="admin-section">
-        <h2>Video Management</h2>
-        
-        <div class="add-video-form">
-          <h3>Tambah Video Baru</h3>
-          <form id="add-video-form">
-            <div class="form-group">
-              <label for="video-url">Video URL (YouTube/MP4)</label>
-              <input type="text" id="video-url" required>
-            </div>
-            <div class="form-group">
-              <label for="video-duration">Durasi (detik)</label>
-              <input type="number" id="video-duration" min="10" value="30" required>
-            </div>
-            <div class="form-group">
-              <label for="video-order">Urutan Tampil</label>
-              <input type="number" id="video-order" min="1" value="1" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Tambah Video</button>
-          </form>
+  <header class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <a href="/admin/logout" class="logout-btn">Logout</a>
+  </header>
+
+  <nav class="sidebar">
+    <ul>
+      <li><a href="#dashboard" class="active">Dashboard</a></li>
+      <li><a href="#videos">Manage Videos</a></li>
+      <li><a href="#queues">Manage Queues</a></li>
+      <li><a href="#settings">Settings</a></li>
+    </ul>
+  </nav>
+
+  <!-- dashboard -->
+  <main class="content">
+    <section id="dashboard">
+      <h2>System Overview</h2>
+      <div class="stats">
+        <div class="stat-card">
+          <h3>Active Queues</h3>
+          <p id="queue-count">0</p>
         </div>
-        
-        <div class="video-list">
-          <h3>Daftar Video</h3>
-          <ul id="video-list"></ul>
+        <div class="stat-card">
+          <h3>Videos</h3>
+          <p id="video-count">0</p>
         </div>
-      </section>
+      </div>
+    </section>
+
+    <!-- manage videos -->
+    <section id="videos" style="display:none;">
+      <h2>Video Management</h2>
+      <div class="video-upload">
+        <input type="file" id="video-upload" accept="video/mp4">
+        <button id="upload-btn">Upload Video</button>
+      </div>
+      <div id="video-list"></div>
+    </section>
+
+    <!-- manage queues -->
+    <section id="queues" style="display:none;">
+      <h2>Queue Management</h2>
+      <div class="queue-actions">
+        <button id="reset-queues-btn" class="btn-danger">Reset All Queues</button>
+      </div>
       
-      <!-- Currency Rates -->
-      <section class="admin-section">
-        <h2>Kurs Mata Uang</h2>
-        
-        <div id="currency-form-container">
-          <form id="currency-form">
-            <div id="currency-fields">
-              <!-- Fields will be added dynamically -->
-            </div>
-            <button type="submit" class="btn btn-primary">Update Kurs</button>
-          </form>
+      <div class="queue-container">
+        <h3>Active Queues</h3>
+        <div id="active-queues-list">
+          <!-- Daftar antrian aktif akan dimuat di sini -->
         </div>
-      </section>
-      
-      <!-- Information Text -->
-      <section class="admin-section">
-        <h2>Informasi Singkat</h2>
         
-        <form id="info-form">
-          <div class="form-group">
-            <label for="info-text">Teks Informasi (max 200 karakter)</label>
-            <textarea id="info-text" maxlength="200" rows="3" required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Update Informasi</button>
-        </form>
-      </section>
-    </div>
-  </div>
+        <h3>Queue History</h3>
+        <div id="all-queues-list">
+          <!-- Daftar semua antrian akan dimuat di sini -->
+        </div>
+      </div>
+    </section>
+
+      <!-- settings -->
+    <section id="settings" style="display:none;"></section>
+  </main>
+
+
+   
+
 
   <script src="/js/admin.js"></script>
 </body>
