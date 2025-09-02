@@ -1,160 +1,94 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const nextBtn = document.getElementById('next-btn');
-  const recallBtn = document.getElementById('recall-btn');
-  const completeBtn = document.getElementById('complete-btn');
-  const currentQueueNumber = document.getElementById('current-queue-number');
-  const currentQueueTime = document.getElementById('current-queue-time');
-  const queueList = document.getElementById('queue-list');
-  const bellSound = document.getElementById('bell-sound');
-  const queueSound = document.getElementById('queue-sound');
-  
-  let currentQueue = null;
-  
-  // Dapatkan data teller berdasarkan IP
-  fetch('/api/teller/queues')
-    .then(response => response.json())
-    .then(queues => {
-      updateQueueList(queues);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Tidak dapat terhubung ke server');
-    });
-  
-  // Next button handler
-  nextBtn.addEventListener('click', () => {
-    fetch('/api/teller/next')
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
-          alert(data.error);
-          return;
+    // Ambil elemen dari halaman
+    const tellerNameEl = document.getElementById('teller-name');
+    const currentQueueNumberEl = document.getElementById('current-queue-number');
+    const callNextBtn = document.getElementById('call-next-btn');
+    const completeBtn = document.getElementById('complete-btn');
+    const recallBtn = document.getElementById('recall-btn');
+    const errorMsgEl = document.getElementById('error-message');
+
+    // Variabel untuk menyimpan state
+    let tellerInfo = null;
+    let currentQueue = null;
+
+    // Fungsi fetch dengan penanganan error dasar
+    async function fetchApi(url, options = {}) {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.message || 'Terjadi kesalahan');
         }
-        
-        currentQueue = data.queue;
-        updateCurrentQueueDisplay();
-        playQueueSound(data.audioUrl);
-        updateQueueList([currentQueue, ...Array.from(queueList.children)
-          .map(li => JSON.parse(li.dataset.queue))
-          .filter(q => q.id !== currentQueue.id)]);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Gagal memanggil antrian berikutnya');
-      });
-  });
-  
-  // Recall button handler
-  recallBtn.addEventListener('click', () => {
-    fetch('/api/teller/recall')
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
-          alert(data.error);
-          return;
-        }
-        
-        if (!data.queue) {
-          alert('Tidak ada antrian sebelumnya');
-          return;
-        }
-        
-        currentQueue = data.queue;
-        updateCurrentQueueDisplay();
-        playQueueSound(data.audioUrl);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Gagal memanggil ulang antrian');
-      });
-  });
-  
-  // Complete button handler
-  completeBtn.addEventListener('click', () => {
-    if (!currentQueue) return;
-    
-    fetch(`/api/teller/complete/${currentQueue.id}`, {
-      method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-      
-      currentQueue = null;
-      updateCurrentQueueDisplay();
-      
-      // Refresh queue list
-      return fetch('/api/teller/queues');
-    })
-    .then(response => response.json())
-    .then(queues => {
-      updateQueueList(queues);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Gagal menyelesaikan antrian');
-    });
-  });
-  
-  function updateCurrentQueueDisplay() {
-    if (currentQueue) {
-      currentQueueNumber.textContent = currentQueue.queue_number;
-      
-      const calledAt = new Date(currentQueue.called_at);
-      currentQueueTime.textContent = calledAt.toLocaleTimeString();
-      
-      completeBtn.disabled = false;
-    } else {
-      currentQueueNumber.textContent = '-';
-      currentQueueTime.textContent = '-';
-      completeBtn.disabled = true;
+        return response.json();
     }
-  }
-  
-  function updateQueueList(queues) {
-    queueList.innerHTML = '';
-    
-    queues.forEach(queue => {
-      const li = document.createElement('li');
-      li.dataset.queue = JSON.stringify(queue);
-      
-      const statusClass = queue.status === 'Dipanggil' ? 'called' : 'waiting';
-      
-      li.innerHTML = `
-        <span class="queue-number ${statusClass}">${queue.queue_number}</span>
-        <span class="queue-time">${new Date(queue.created_at).toLocaleTimeString()}</span>
-        ${queue.teller_name ? `<span class="teller-name">${queue.teller_name}</span>` : ''}
-      `;
-      
-      queueList.appendChild(li);
-    });
-  }
-  
-  function playQueueSound(audioUrl) {
-    // Play bell sound
-    bellSound.currentTime = 0;
-    bellSound.play();
-    
-    // Play queue number sound after bell
-    setTimeout(() => {
-      queueSound.src = audioUrl;
-      queueSound.play();
-    }, 1000);
-  }
-  
-  // Poll for queue updates every 5 seconds
-  setInterval(() => {
-    fetch('/api/teller/queues')
-      .then(response => response.json())
-      .then(queues => {
-        // Only update if current queue is not being handled
-        if (!currentQueue || currentQueue.status === 'Selesai') {
-          updateQueueList(queues);
+
+    // 1. Identifikasi teller saat halaman dimuat
+    const identify = async () => {
+        try {
+            tellerInfo = await fetchApi('http://192.168.0.189:3001/api/teller/identify'); // IP WAJIB DI SESUAIKAN LAPTOP SERVER
+            tellerNameEl.textContent = `Selamat Datang, ${tellerInfo.name}`;
+            callNextBtn.disabled = false; // Aktifkan tombol panggil
+            fetchCurrentState();
+            setInterval(fetchCurrentState, 5000); // Cek status setiap 5 detik
+        } catch (error) {
+            tellerNameEl.textContent = 'Akses Ditolak';
+            errorMsgEl.textContent = error.message;
         }
-      })
-      .catch(error => console.error('Error polling queues:', error));
-  }, 5000);
+    };
+
+    // 2. Ambil status antrian saat ini
+    const fetchCurrentState = async () => {
+        if (!tellerInfo) return;
+        try {
+            currentQueue = await fetchApi(`http://localhost:3001/api/teller/${tellerInfo.id}/current-queue`);
+            updateUI();
+        } catch (error) {
+            console.error("Gagal fetch status:", error);
+        }
+    };
+
+    // 3. Perbarui tampilan (UI)
+    const updateUI = () => {
+        if (currentQueue) {
+            currentQueueNumberEl.textContent = currentQueue.queue_number;
+            callNextBtn.disabled = true;
+            completeBtn.disabled = false;
+            recallBtn.disabled = false;
+        } else {
+            currentQueueNumberEl.textContent = '--';
+            callNextBtn.disabled = false;
+            completeBtn.disabled = true;
+            recallBtn.disabled = true;
+        }
+    };
+
+    // Event Listeners untuk Tombol Aksi
+    callNextBtn.addEventListener('click', async () => {
+        try {
+            const newQueue = await fetchApi('http://localhost:3001/api/queues/call-next', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teller_id: tellerInfo.id })
+            });
+            currentQueue = newQueue;
+            updateUI();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    completeBtn.addEventListener('click', async () => {
+        if (!currentQueue) return;
+        try {
+            await fetchApi(`http://localhost:3001/api/queues/${currentQueue.id}/complete`, {
+                method: 'PUT'
+            });
+            currentQueue = null;
+            updateUI();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Panggil fungsi identifikasi saat halaman siap
+    identify();
 });

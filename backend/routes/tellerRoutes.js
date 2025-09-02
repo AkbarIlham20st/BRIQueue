@@ -2,13 +2,10 @@ const express = require('express');
 const router = express.Router();
 const tellerController = require('../controllers/tellerController');
 
-// Teller routes (no auth needed, identified by IP)
-router.get('/next', tellerController.callNextQueue);
-router.get('/recall', tellerController.recallLastQueue);
-router.post('/complete/:queueId', tellerController.completeQueue);
-router.get('/queues', tellerController.getActiveQueues);
+// Rute untuk "login" otomatis berdasarkan IP
+router.get('/identify', tellerController.identifyTeller);
 
-// Public queue generation
-router.post('/generate', tellerController.generateQueue);
+// Rute untuk mendapatkan antrian yang sedang dilayani teller
+router.get('/:tellerId/current-queue', tellerController.getCurrentQueue);
 
 module.exports = router;

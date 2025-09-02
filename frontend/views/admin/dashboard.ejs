@@ -1,80 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/admin.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Sistem Antrian</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-  <header class="admin-header">
-    <h1>Admin Dashboard</h1>
-    <a href="/admin/logout" class="logout-btn">Logout</a>
-  </header>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-university"></i> Admin Panel</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/admin/queues"><i class="fas fa-users"></i> Kelola Antrian</a>
+                <a href="/admin/videos"><i class="fas fa-video"></i> Kelola Video</a>
+                <a href="/admin/settings"><i class="fas fa-cog"></i> Pengaturan</a>
+                <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
 
-  <nav class="sidebar">
-    <ul>
-      <li><a href="#dashboard" class="active">Dashboard</a></li>
-      <li><a href="#videos">Manage Videos</a></li>
-      <li><a href="#queues">Manage Queues</a></li>
-      <li><a href="#settings">Settings</a></li>
-    </ul>
-  </nav>
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Dashboard</h1>
+                <p>Selamat datang, Admin!</p>
+            </header>
+            
+            <div class="content-body">
+                <section class="status-cards">
+                    <div class="card">
+                        <i class="fas fa-ticket-alt card-icon"></i>
+                        <div class="card-info">
+                            <p>Total Antrian Hari Ini</p>
+                            <h2 id="total-queues">Memuat...</h2>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <i class="fas fa-user-clock card-icon"></i>
+                        <div class="card-info">
+                            <p>Antrian Sedang Dilayani</p>
+                            <h2 id="current-queue">Memuat...</h2>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <i class="fas fa-hourglass-half card-icon"></i>
+                        <div class="card-info">
+                            <p>Sisa Antrian</p>
+                            <h2 id="remaining-queues">Memuat...</h2>
+                        </div>
+                    </div>
+                </section>
 
-  <!-- dashboard -->
-  <main class="content">
-    <section id="dashboard">
-      <h2>System Overview</h2>
-      <div class="stats">
-        <div class="stat-card">
-          <h3>Active Queues</h3>
-          <p id="queue-count">0</p>
-        </div>
-        <div class="stat-card">
-          <h3>Videos</h3>
-          <p id="video-count">0</p>
-        </div>
-      </div>
-    </section>
+                <!-- <section class="quick-actions">
+                    <h3>Aksi Cepat</h3>
+                    <div class="action-buttons">
+                        <button id="reset-button" class="btn btn-danger"><i class="fas fa-sync-alt"></i> Reset Semua Antrian</button>
+                        <button id="recall-button" class="btn btn-secondary"><i class="fas fa-volume-up"></i> Panggil Ulang Antrian</button>
+                    </div>
+                </section> -->
+            </div>
+        </main>
+    </div>
 
-    <!-- manage videos -->
-    <section id="videos" style="display:none;">
-      <h2>Video Management</h2>
-      <div class="video-upload">
-        <input type="file" id="video-upload" accept="video/mp4">
-        <button id="upload-btn">Upload Video</button>
-      </div>
-      <div id="video-list"></div>
-    </section>
-
-    <!-- manage queues -->
-    <section id="queues" style="display:none;">
-      <h2>Queue Management</h2>
-      <div class="queue-actions">
-        <button id="reset-queues-btn" class="btn-danger">Reset All Queues</button>
-      </div>
-      
-      <div class="queue-container">
-        <h3>Active Queues</h3>
-        <div id="active-queues-list">
-          <!-- Daftar antrian aktif akan dimuat di sini -->
-        </div>
-        
-        <h3>Queue History</h3>
-        <div id="all-queues-list">
-          <!-- Daftar semua antrian akan dimuat di sini -->
-        </div>
-      </div>
-    </section>
-
-      <!-- settings -->
-    <section id="settings" style="display:none;"></section>
-  </main>
-
-
-   
-
-
-  <script src="/js/admin.js"></script>
+    <script src="/js/admin.js"></script>
 </body>
 </html>

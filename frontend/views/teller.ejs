@@ -1,35 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teller Interface</title>
-  <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Teller</title>
+    <link rel="stylesheet" href="/css/teller.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-  <div class="teller-container">
-    <h1 id="teller-name">Teller</h1>
-    <div class="current-queue">
-      <h2>Antrian Saat Ini</h2>
-      <div id="current-queue-number">-</div>
-      <div id="current-queue-time">-</div>
+    <div class="teller-container">
+        <header class="teller-header">
+            <h1 id="teller-name">Mengidentifikasi...</h1>
+            <p>Panel Kontrol Antrian</p>
+        </header>
+        <main class="teller-main">
+            <div class="current-queue-display">
+                <p>Sedang Melayani</p>
+                <h2 id="current-queue-number">--</h2>
+            </div>
+            <div class="teller-actions">
+                <button id="call-next-btn" class="btn btn-call" disabled>
+                    <i class="fas fa-bullhorn"></i> Panggil Berikutnya
+                </button>
+                <button id="complete-btn" class="btn btn-complete" disabled>
+                    <i class="fas fa-check"></i> Selesaikan
+                </button>
+                <button id="recall-btn" class="btn btn-recall" disabled>
+                    <i class="fas fa-volume-up"></i> Panggil Ulang
+                </button>
+            </div>
+            <div id="error-message" class="error-message"></div>
+        </main>
     </div>
-    
-    <div class="controls">
-      <button id="next-btn" class="btn btn-primary">Next</button>
-      <button id="recall-btn" class="btn btn-secondary">Recall</button>
-      <button id="complete-btn" class="btn btn-complete" disabled>Selesai</button>
-    </div>
-    
-    <div class="queue-list">
-      <h3>Daftar Antrian</h3>
-      <ul id="queue-list"></ul>
-    </div>
-  </div>
-
-  <audio id="bell-sound" src="/sounds/bell.mp3"></audio>
-  <audio id="queue-sound"></audio>
-
-  <script src="/js/teller.js"></script>
+    <script src="/js/teller.js"></script>
 </body>
 </html>

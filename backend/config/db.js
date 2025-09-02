@@ -1,24 +1,11 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'bank_queue',
-  password: process.env.DB_PASSWORD || 'password',
-  port: process.env.DB_PORT || 5432,
-});
-
-// Test the connection immediately
-pool.query('SELECT NOW()', (err) => {
-  if (err) {
-    console.error('Database connection error', err.stack);
-  } else {
-    console.log('Database connected successfully');
-  }
+    connectionString: process.env.DATABASE_URL,
 });
 
 module.exports = {
-  pool,  // Export the pool directly
-  query: (text, params) => pool.query(text, params),
+    query: (text, params) => pool.query(text, params),
+    pool, // Ekspor pool untuk connect-pg-simple
 };

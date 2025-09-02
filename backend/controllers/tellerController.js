@@ -1,106 +1,33 @@
-const tellerModel = require('../models/tellerModel');
-const { textToSpeech } = require('../utils/tts');
+const db = require('../config/db');
 
-exports.callNextQueue = async (req, res) => {
-  try {
-    const tellerIp = req.ip;
-    const teller = await tellerModel.getTellerByIp(tellerIp);
+// Fungsi untuk mengidentifikasi teller berdasarkan alamat IP
+exports.identifyTeller = async (req, res) => {
+    const ip = req.ip;
+    console.log(`[TELLER] Mencoba identifikasi dari IP: ${ip}`);
     
-    if (!teller) {
-      return res.status(403).json({ error: 'IP tidak terdaftar sebagai teller' });
+    try {
+        const result = await db.query('SELECT * FROM tellers WHERE ip_address = $1', [ip]);
+        if (result.rows.length === 0) {
+            // Jika IP tidak terdaftar, kirim error 403 (Forbidden)
+            return res.status(403).json({ message: 'Akses ditolak. Alamat IP tidak terdaftar sebagai teller.' });
+        }
+        // Jika IP ditemukan, kirim detail teller
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Terjadi kesalahan server' });
     }
-
-    const queue = await tellerModel.callNextQueue(teller.id);
-    
-    if (!queue) {
-      return res.status(404).json({ message: 'Tidak ada antrian yang menunggu' });
-    }
-
-    // Generate audio untuk nomor antrian
-    const audioUrl = await textToSpeech(`Nomor antrian ${queue.queue_number} menuju ${teller.name}`);
-    
-    res.json({
-      queue,
-      teller,
-      audioUrl,
-      message: `Nomor antrian ${queue.queue_number} berhasil dipanggil`
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
 };
 
-exports.recallLastQueue = async (req, res) => {
-  try {
-    const tellerIp = req.ip;
-    const teller = await tellerModel.getTellerByIp(tellerIp);
-    
-    if (!teller) {
-      return res.status(403).json({ error: 'IP tidak terdaftar sebagai teller' });
+// Fungsi untuk mendapatkan antrian yang sedang dilayani oleh teller spesifik
+exports.getCurrentQueue = async (req, res) => {
+    const { tellerId } = req.params;
+    try {
+        const result = await db.query(
+            "SELECT * FROM queues WHERE teller_id = $1 AND status = 'Dipanggil' ORDER BY called_at DESC LIMIT 1",
+            [tellerId]
+        );
+        res.status(200).json(result.rows[0] || null); // Kirim null jika tidak ada
+    } catch (error) {
+        res.status(500).json({ message: 'Gagal mengambil antrian saat ini' });
     }
-
-    const queue = await tellerModel.recallLastQueue(teller.id);
-    
-    if (!queue) {
-      return res.status(404).json({ message: 'Tidak ada antrian sebelumnya' });
-    }
-
-    // Generate audio untuk nomor antrian
-    const audioUrl = await textToSpeech(`Nomor antrian ${queue.queue_number} menuju ${teller.name}`);
-    
-    res.json({
-      queue,
-      teller,
-      audioUrl,
-      message: `Nomor antrian ${queue.queue_number} berhasil dipanggil ulang`
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
-
-exports.completeQueue = async (req, res) => {
-  try {
-    const { queueId } = req.params;
-    const queue = await tellerModel.completeQueue(queueId);
-    
-    if (!queue) {
-      return res.status(404).json({ message: 'Antrian tidak ditemukan' });
-    }
-    
-    res.json({ 
-      message: `Antrian ${queue.queue_number} selesai`,
-      queue 
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
-
-exports.generateQueue = async (req, res) => {
-  try {
-    const queueNumber = await tellerModel.generateQueueNumber();
-    const queue = await tellerModel.createQueue(queueNumber);
-    
-    res.json({
-      message: 'Nomor antrian berhasil dibuat',
-      queue
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
-
-exports.getActiveQueues = async (req, res) => {
-  try {
-    const queues = await tellerModel.getActiveQueues();
-    res.json(queues);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
 };

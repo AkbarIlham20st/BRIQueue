@@ -1,45 +1,69 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const tellerRoutes = require('./routes/tellerRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const queuesRoutes = require('./routes/queuesRoutes');
-const displayRoutes = require('./routes/displayRoutes');
-const { pool } = require('./config/db');
+const dotenv = require('dotenv');
+const db = require('./config/db');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+
+dotenv.config({ path: '../.env' });
 
 const app = express();
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('../frontend/public'));
-
-// Trust proxy untuk mendapatkan IP asli
 app.set('trust proxy', true);
+const PORT = process.env.BACKEND_PORT || 3001;
+
+const allowedOrigins = [
+    `http://localhost:${process.env.FRONTEND_PORT || 3000}`,
+    'http://192.168.0.189:3000' // <-- TAMBAHKAN ALAMAT IP SERVER ANDA DI SINI
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Izinkan jika origin ada di dalam daftar, atau jika origin tidak ada (misal: request dari Postman)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Akses diblokir oleh kebijakan CORS'));
+        }
+    },
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(session({
+    store: new pgSession({
+        pool: db.pool,
+        tableName: 'user_sessions'
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 jam
+    }
+}));
+
+db.query('SELECT NOW()', (err) => {
+    if (err) {
+        console.error('🔴 Gagal terhubung ke database:', err);
+    } else {
+        console.log('🟢 Berhasil terhubung ke database PostgreSQL.');
+    }
+});
 
 // Routes
-app.use('/api/teller', tellerRoutes);
+const adminRoutes = require('./routes/adminRoutes');
+const queuesRoutes = require('./routes/queuesRoutes');
+const videoRoutes = require('./routes/videoRoutes');
+const displayRoutes = require('./routes/displayRoutes');
+const tellerRoutes = require('./routes/tellerRoutes');
+
 app.use('/api/admin', adminRoutes);
-app.use('/admin', queuesRoutes);
+app.use('/api/queues', queuesRoutes);
+app.use('/api/videos', videoRoutes);
 app.use('/api/display', displayRoutes);
+app.use('/api/teller', tellerRoutes);
 
-// Test database connection
-pool.query('SELECT NOW()', (err) => {
-  if (err) {
-    console.error('Database connection error', err.stack);
-  } else {
-    console.log('Database connected');
-  }
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something broke!' });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Backend server berjalan di http://localhost:${PORT}`);
 });

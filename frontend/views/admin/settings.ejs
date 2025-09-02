@@ -1,152 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Settings</title>
-    <style>
-        .settings-container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        .btn-submit {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .btn-submit:hover {
-            background-color: #0069d9;
-        }
-        .message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
+    <title>Pengaturan Akun - Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <%- include('../partials/admin-header', { user }) %>
-
     <div class="admin-container">
-        <%- include('../partials/admin-sidebar') %>
+        <aside class="sidebar">
+            <div class="sidebar-header"><h3><i class="fas fa-university"></i> Admin Panel</h3></div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/admin/queues"><i class="fas fa-users"></i> Kelola Antrian</a>
+                <a href="/admin/videos"><i class="fas fa-video"></i> Kelola Video</a>
+                <a href="/admin/settings" class="active"><i class="fas fa-cog"></i> Pengaturan</a>
+                <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
 
-        <main class="content">
-            <section id="settings">
-                <div class="settings-container">
-                    <h2>Change Admin Password</h2>
-                    
-                    <form id="changePasswordForm">
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Pengaturan Akun</h1>
+                <p>Ubah password login Anda di sini.</p>
+            </header>
+            
+            <div class="content-body">
+                <section class="card" style="max-width: 500px;">
+                    <h3><i class="fas fa-key"></i> Ganti Password</h3>
+                    <form id="change-password-form">
                         <div class="form-group">
-                            <label for="currentPassword">Current Password</label>
-                            <input type="password" id="currentPassword" required>
+                            <label for="currentPassword">Password Saat Ini</label>
+                            <input type="password" id="currentPassword" name="currentPassword" required>
                         </div>
-                        
                         <div class="form-group">
-                            <label for="newPassword">New Password</label>
-                            <input type="password" id="newPassword" required minlength="6">
+                            <label for="newPassword">Password Baru</label>
+                            <input type="password" id="newPassword" name="newPassword" required>
                         </div>
-                        
                         <div class="form-group">
-                            <label for="confirmPassword">Confirm New Password</label>
-                            <input type="password" id="confirmPassword" required minlength="6">
+                            <label for="confirmPassword">Konfirmasi Password Baru</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required>
                         </div>
-                        
-                        <button type="submit" class="btn-submit">Change Password</button>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <p id="form-message" class="form-message"></p>
                     </form>
-                    
-                    <div id="message" class="message" style="display: none;"></div>
-                </div>
-            </section>
+                </section>
+            </div>
         </main>
     </div>
-
-    <script>
-        document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            // Validasi
-            if (newPassword !== confirmPassword) {
-                showMessage('New passwords do not match', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 6) {
-                showMessage('Password must be at least 6 characters', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/admin/settings/change-password', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        currentPassword,
-                        newPassword
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    showMessage('Password changed successfully!', 'success');
-                    document.getElementById('changePasswordForm').reset();
-                } else {
-                    showMessage(result.message || 'Failed to change password', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('An error occurred. Please try again.', 'error');
-            }
-        });
-        
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = text;
-            messageDiv.className = `message ${type}`;
-            messageDiv.style.display = 'block';
-            
-            // Hilangkan pesan setelah 5 detik
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
-        }
-    </script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/settings.js"></script>
 </body>
 </html>

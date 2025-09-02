@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const queuesController = require('../controllers/queuesController');
-const { authenticate } = require('../middleware/auth');
+const { isAuthenticated } = require('../middlewares/auth');
 
-router.get('/queues', authenticate, queuesController.getQueuesPage);
-router.post('/queues/call', authenticate, queuesController.callQueue);
-router.post('/queues/complete', authenticate, queuesController.completeQueue);
-router.post('/queues/reset', authenticate, queuesController.resetQueues);
+router.post('/reset', isAuthenticated, queuesController.resetQueues);
 
 module.exports = router;

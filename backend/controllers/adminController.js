@@ -1,324 +1,98 @@
-const multer = require('multer');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
-const bcrypt = require('bcrypt');
-const pool = require('../config/db');
+const db = require('../config/db');
+const bcrypt = require('bcryptjs');
 
-// Configure upload directory
-const uploadDir = path.join(__dirname, '../../frontend/public/uploads/videos');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// backend/controllers/adminController.js
 
-// Multer configuration for video uploads
-const videoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `video_${uuidv4()}${ext}`);
-  }
-});
+exports.login = async (req, res) => {
+    // ================== DEBUGGING START ==================
+    console.log('\n--- [DEBUG] Menerima Permintaan Login Baru ---');
+    console.log('[DEBUG] Waktu:', new Date().toLocaleTimeString());
+    console.log('[DEBUG] Request Body:', req.body);
+    console.log('[DEBUG] Info Sesi Awal:', req.session.user || 'Tidak ada sesi aktif');
+    // =================== DEBUGGING END ===================
 
-const uploadVideo = multer({
-  storage: videoStorage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only video files are allowed'), false);
-    }
-  }
-}).single('videoFile');
-
-// Controller Methods
-
-const login = async (req, res) => {
-  try {
     const { username, password } = req.body;
     
-    if (!username || !password) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Username and password are required' 
-      });
-    }
+    try {
+        const result = await db.query('SELECT * FROM admins WHERE username = $1', [username]);
+        const admin = result.rows[0];
 
-    // In a real app, verify against database
-    if (username === 'admin' && password === 'admin123') {
-      req.session.admin = { username };
-      return res.json({ 
-        success: true,
-        message: 'Login successful' 
-      });
-    }
+        if (!admin) {
+            console.log(`[DEBUG] HASIL: Username '${username}' tidak ditemukan.`);
+            return res.status(401).json({ message: 'Username atau password salah' });
+        }
+        console.log('[DEBUG] HASIL: Admin ditemukan di DB:', {id: admin.id, username: admin.username});
 
-    res.status(401).json({ 
-      success: false,
-      error: 'Invalid credentials' 
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
-  }
+        const isPasswordMatch = await bcrypt.compare(password, admin.password);
+        console.log('[DEBUG] HASIL: Perbandingan password (bcrypt):', isPasswordMatch);
+
+        if (!isPasswordMatch) {
+            return res.status(401).json({ message: 'Username atau password salah' });
+        }
+
+        // Membuat sesi baru
+        req.session.user = { id: admin.id, username: admin.username };
+        console.log('[DEBUG] HASIL: Sesi baru berhasil dibuat untuk:', req.session.user);
+        
+        // Final response
+        res.status(200).json({ message: 'Login berhasil', user: req.session.user });
+
+    } catch (error) {
+        console.error('[DEBUG] ERROR:', error);
+        res.status(500).json({ message: 'Terjadi kesalahan server' });
+    }
 };
 
-const logout = (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Logout error:', err);
-      return res.status(500).json({ 
-        success: false,
-        error: 'Failed to logout' 
-      });
-    }
-    res.json({ 
-      success: true,
-      message: 'Logged out successfully' 
+exports.logout = (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ message: 'Gagal logout' });
+        }
+        res.clearCookie('connect.sid');
+        res.status(200).json({ message: 'Logout berhasil' });
     });
-  });
 };
 
-const uploadVideoHandler = (req, res) => {
-  uploadVideo(req, res, async (err) => {
-    if (err) {
-      console.error('Upload error:', err);
-      return res.status(400).json({ 
-        success: false,
-        error: err.message 
-      });
+exports.checkAuth = (req, res) => {
+    if (req.session.user) {
+        res.status(200).json({ loggedIn: true, user: req.session.user });
+    } else {
+        res.status(401).json({ loggedIn: false });
     }
+};
 
-    if (!req.file) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'No file uploaded' 
-      });
+exports.changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const adminId = req.session.user.id; // Ambil ID admin dari sesi yang aktif
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Semua kolom harus diisi' });
     }
 
     try {
-      const filePath = `/uploads/videos/${req.file.filename}`;
-      const duration = req.body.duration || 30;
-      const displayOrder = req.body.displayOrder || 999;
+        // 1. Ambil hash password saat ini dari database
+        const result = await db.query('SELECT password FROM admins WHERE id = $1', [adminId]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Admin tidak ditemukan' });
+        }
+        const currentHashedPassword = result.rows[0].password;
 
-      const result = await pool.query(
-        `INSERT INTO display_contents 
-         (content_type, content_value, duration, display_order)
-         VALUES ('video', $1, $2, $3) RETURNING *`,
-        [filePath, duration, displayOrder]
-      );
+        // 2. Bandingkan password saat ini yang diinput dengan yang ada di DB
+        const isMatch = await bcrypt.compare(currentPassword, currentHashedPassword);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Password saat ini salah' });
+        }
 
-      res.json({
-        success: true,
-        video: result.rows[0]
-      });
+        // 3. Hash password baru
+        const salt = await bcrypt.genSalt(10);
+        const newHashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // 4. Update password di database dengan hash yang baru
+        await db.query('UPDATE admins SET password = $1 WHERE id = $2', [newHashedPassword, adminId]);
+
+        res.status(200).json({ message: 'Password berhasil diperbarui!' });
     } catch (error) {
-      console.error('Database error:', error);
-      // Clean up uploaded file if DB fails
-      fs.unlinkSync(path.join(uploadDir, req.file.filename));
-      res.status(500).json({ 
-        success: false,
-        error: 'Database error' 
-      });
-    }
-  });
-};
-
-const getVideos = async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT * FROM display_contents 
-       WHERE content_type = 'video'
-       ORDER BY display_order ASC`
-    );
-    res.json({
-      success: true,
-      videos: rows
-    });
-  } catch (error) {
-    console.error('Get videos error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to fetch videos' 
-    });
-  }
-};
-
-const updateVideoOrder = async (req, res) => {
-  const { videos } = req.body;
-  
-  try {
-    await pool.query('BEGIN');
-    
-    for (const video of videos) {
-      await pool.query(
-        `UPDATE display_contents 
-         SET display_order = $1
-         WHERE id = $2`,
-        [video.order, video.id]
-      );
-    }
-    
-    await pool.query('COMMIT');
-    res.json({ 
-      success: true,
-      message: 'Video order updated' 
-    });
-  } catch (error) {
-    await pool.query('ROLLBACK');
-    console.error('Update order error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to update video order' 
-    });
-  }
-};
-
-const deleteVideo = async (req, res) => {
-  const { id } = req.params;
-  
-  try {
-    // Get video path first
-    const { rows } = await pool.query(
-      'SELECT content_value FROM display_contents WHERE id = $1',
-      [id]
-    );
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Video not found' 
-      });
-    }
-
-    const filePath = path.join(__dirname, '../../frontend/public', rows[0].content_value);
-    
-    // Delete from database
-    await pool.query(
-      'DELETE FROM display_contents WHERE id = $1',
-      [id]
-    );
-    
-    // Delete file
-    fs.unlink(filePath, (err) => {
-      if (err) console.error('Error deleting file:', err);
-    });
-    
-    res.json({ 
-      success: true,
-      message: 'Video deleted' 
-    });
-  } catch (error) {
-    console.error('Delete video error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to delete video' 
-    });
-  }
-};
-
-const getDashboardData = async (req, res) => {
-  try {
-    // Example dashboard data
-    const videosCount = await pool.query(
-      "SELECT COUNT(*) FROM display_contents WHERE content_type = 'video'"
-    );
-    const queuesCount = await pool.query(
-      "SELECT COUNT(*) FROM queues WHERE status = 'active'"
-    );
-
-    res.json({
-      success: true,
-      data: {
-        videos: parseInt(videosCount.rows[0].count),
-        queues: parseInt(queuesCount.rows[0].count)
-      }
-    });
-  } catch (error) {
-    console.error('Dashboard error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to load dashboard data' 
-    });
-  }
-};
-
-module.exports = {
-  login,
-  logout,
-  uploadVideoHandler,
-  getVideos,
-  updateVideoOrder,
-  deleteVideo,
-  getDashboardData,
-  getSettingsPage: async (req, res) => {
-        try {
-            res.render('admin/settings', {
-                title: 'Settings',
-                user: req.session.admin
-            });
-        } catch (error) {
-            console.error('Error getting settings page:', error);
-            res.status(500).render('error', {
-                message: 'Failed to load settings page',
-                error: req.app.get('env') === 'development' ? error : null
-            });
-        }
-    },
-
-    changePassword: async (req, res) => {
-        try {
-            const { currentPassword, newPassword } = req.body;
-            const adminId = req.session.admin.id;
-
-            // Dapatkan password saat ini dari database
-            const { rows } = await pool.query(
-                'SELECT password FROM admins WHERE id = $1',
-                [adminId]
-            );
-
-            if (rows.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Admin not found'
-                });
-            }
-
-            // Verifikasi password saat ini
-            const isMatch = await bcrypt.compare(currentPassword, rows[0].password);
-            if (!isMatch) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Current password is incorrect'
-                });
-            }
-
-            // Hash password baru
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-            // Update password di database
-            await pool.query(
-                'UPDATE admins SET password = $1 WHERE id = $2',
-                [hashedPassword, adminId]
-            );
-
-            res.json({
-                success: true,
-                message: 'Password changed successfully'
-            });
-        } catch (error) {
-            console.error('Error changing password:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Failed to change password'
-            });
-        }
+        console.error('Gagal ganti password:', error);
+        res.status(500).json({ message: 'Terjadi kesalahan pada server' });
     }
 };

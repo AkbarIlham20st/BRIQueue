@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7fa;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.teller-container {
+    width: 100%;
+    max-width: 500px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+.teller-header {
+    background-color: #0056b3;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+.teller-header h1 { margin: 0; }
+.teller-header p { margin: 5px 0 0; opacity: 0.8; }
+.teller-main { padding: 30px; }
+.current-queue-display {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.current-queue-display p {
+    font-size: 1.2em;
+    color: #666;
+    margin: 0;
+}
+.current-queue-display h2 {
+    font-size: 6em;
+    font-weight: 700;
+    color: #333;
+    margin: 10px 0;
+}
+.teller-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+.btn {
+    padding: 15px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+.btn-call { background-color: #27ae60; }
+.btn-complete { background-color: #e74c3c; }
+.btn-recall { background-color: #f39c12; }
+.error-message {
+    margin-top: 20px;
+    text-align: center;
+    color: #e74c3c;
+    font-weight: 600;
+}

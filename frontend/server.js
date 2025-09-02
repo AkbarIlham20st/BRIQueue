@@ -1,165 +1,88 @@
+// Import modul yang diperlukan dari package Node.js
 const express = require('express');
 const path = require('path');
-const session = require('express-session');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const dotenv = require('dotenv');
 
+// Memuat variabel lingkungan dari file .env yang ada di folder root proyek
+// Path '../.env' artinya "naik satu level direktori, lalu cari file .env"
+dotenv.config({ path: '../.env' });
+
+// Inisialisasi aplikasi Express
 const app = express();
-const PORT = 3001;
+// Ambil nomor port dari file .env, atau gunakan 3000 jika tidak ditemukan
+const PORT = process.env.FRONTEND_PORT || 3000;
 
-// 1. Konfigurasi Session untuk Admin
-app.use(session({
-  secret: 'rahasia_bank_queue', // Ganti dengan secret key yang kuat
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: false, // Set true jika menggunakan HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 1 hari
-  }
-}));
-
-// 2. Konfigurasi EJS
-app.set('views', path.join(__dirname, 'views'));
+// Konfigurasi View Engine untuk EJS
+// Memberitahu Express untuk menggunakan EJS sebagai template engine
 app.set('view engine', 'ejs');
+// Menentukan lokasi folder 'views' tempat file .ejs disimpan
+app.set('views', path.join(__dirname, 'views'));
 
-// 3. Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware untuk menyajikan file statis
+// Membuat semua file di dalam folder 'public' dapat diakses dari browser
+// Contoh: file 'public/css/admin.css' bisa diakses melalui URL '/css/admin.css'
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 4. Proxy Configuration
-app.use('/api', createProxyMiddleware({
-  target: 'http://localhost:3000',
-  changeOrigin: true,
-  pathRewrite: { '^/api': '' },
-  onError: (err, req, res) => {
-    console.error('⚠️ Proxy Error:', err);
-    res.status(502).render('error', { 
-      message: 'Koneksi backend gagal',
-      details: err.message
-    });
-  }
-}));
+// Middleware untuk membaca data dari form (jika diperlukan)
+app.use(express.urlencoded({ extended: true }));
 
-// ================= ROUTES ================= //
 
-// Public Routes
-app.get('/', (req, res) => res.redirect('/display'));
+/*
+|--------------------------------------------------------------------------
+| Definisi Rute Halaman (Page Routes)
+|--------------------------------------------------------------------------
+| Rute-rute ini bertanggung jawab untuk merender (menampilkan) file EJS
+| yang sesuai ketika pengguna mengakses URL tertentu.
+*/
+
+// Rute utama (homepage), akan langsung diarahkan ke halaman login admin
+app.get('/', (req, res) => {
+    res.redirect('/admin/login');
+});
+
+// Rute untuk menampilkan halaman login admin
+app.get('/admin/login', (req, res) => {
+    // Merender file 'views/admin/login.ejs'
+    res.render('admin/login');
+});
+
+// Rute untuk menampilkan dashboard admin utama
+app.get('/admin/dashboard', (req, res) => {
+    // Merender file 'views/admin/dashboard.ejs'
+    // Autentikasi akan ditangani oleh JavaScript di sisi klien yang memanggil API backend
+    res.render('admin/dashboard');
+});
+
+app.get('/admin/queues', (req, res) => {
+    res.render('admin/queues');
+});
+
+app.get('/admin/videos', (req, res) => {
+    res.render('admin/video');
+});
+
+app.get('/admin/settings', (req, res) => {
+    res.render('admin/settings');
+});
 
 app.get('/teller', (req, res) => {
-  res.render('teller', { 
-    title: 'Teller Interface',
-    apiBaseUrl: '/api'
-  });
+    res.render('teller');
 });
 
+// Rute untuk menampilkan halaman teller
+app.get('/teller', (req, res) => {
+    // Merender file 'views/teller.ejs' (pastikan file ini ada)
+    res.render('teller');
+});
+
+// Rute untuk menampilkan halaman display publik
 app.get('/display', (req, res) => {
-  res.render('display', {
-    title: 'Display Antrian',
-    apiBaseUrl: '/api'
-  });
+    // Merender file 'views/display.ejs' (pastikan file ini ada)
+    res.render('display');
 });
 
-// ================= ADMIN ROUTES ================= //
 
-// Middleware untuk cek login admin
-const requireAdminAuth = (req, res, next) => {
-  if (req.session.adminAuthenticated) {
-    return next();
-  }
-  res.redirect('/admin/login');
-};
-
-// Login Page
-app.get('/admin/login', (req, res) => {
-  if (req.session.adminAuthenticated) {
-    return res.redirect('/admin/dashboard');
-  }
-  res.render('admin/login', {
-    title: 'Admin Login',
-    error: req.query.error
-  });
-});
-
-// Login Handler
-app.post('/admin/login', async (req, res) => {
-  try {
-    // Contoh validasi sederhana (ganti dengan koneksi ke database)
-    if (req.body.username === 'admin' && req.body.password === 'admin123') {
-      req.session.adminAuthenticated = true;
-      req.session.adminUsername = req.body.username;
-      return res.redirect('/admin/dashboard');
-    }
-    throw new Error('Username atau password salah');
-  } catch (err) {
-    res.redirect('/admin/login?error=' + encodeURIComponent(err.message));
-  }
-});
-
-// Dashboard Admin
-app.get('/admin/dashboard', requireAdminAuth, (req, res) => {
-  res.render('admin/dashboard', {
-    title: 'Admin Dashboard',
-    admin: {
-      username: req.session.adminUsername
-    },
-    apiBaseUrl: '/api'
-  });
-});
-
-// Logout Handler
-app.get('/admin/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/admin/login');
-});
-
-// Admin API Routes (Proteksi dengan auth)
-app.use('/admin/api', requireAdminAuth, createProxyMiddleware({
-  target: 'http://localhost:3000',
-  pathRewrite: { '^/admin/api': '/api/admin' },
-  changeOrigin: true
-}));
-
-// ================= ERROR HANDLING ================= //
-
-// 404 Not Found
-app.use((req, res) => {
-  res.status(404).render('error', {
-    title: '404 Not Found',
-    message: 'Halaman tidak ditemukan'
-  });
-});
-
-// Error handler middleware
-app.use((err, req, res, next) => {
-    // Log error
-    console.error('[ERROR]', err.stack);
-    
-    // Determine status code
-    const status = err.status || 500;
-    
-    // Render error page
-    res.status(status).render('error', {
-        status: status,
-        message: err.message || 'Terjadi kesalahan pada server',
-        error: process.env.NODE_ENV === 'development' ? err : null
-    });
-});
-
-// 404 handler
-app.use((req, res, next) => {
-    res.status(404).render('error', {
-        status: 404,
-        message: 'Halaman tidak ditemukan',
-        error: null
-    });
-});
-
-// ================= START SERVER ================= //
-
-app.listen(PORT, () => {
-  console.log(`
-  🚀 Frontend running: http://localhost:${PORT}
-  🔗 Admin Panel: http://localhost:${PORT}/admin/login
-  📁 Views: ${path.join(__dirname, 'views')}
-  `);
+// Menjalankan server dan mendengarkan koneksi yang masuk di port yang ditentukan
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🖥️  Frontend server berjalan dengan lancar di http://localhost:${PORT}`);
 });
