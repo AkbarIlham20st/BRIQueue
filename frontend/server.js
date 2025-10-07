@@ -1,88 +1,77 @@
-// Import modul yang diperlukan dari package Node.js
+// 1. Panggil semua modul yang diperlukan di bagian paling atas
 const express = require('express');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Memuat variabel lingkungan dari file .env yang ada di folder root proyek
-// Path '../.env' artinya "naik satu level direktori, lalu cari file .env"
+// 2. Muat environment variables SEGERA setelah import
+// Pastikan path ini benar, menunjuk ke file .env di folder root
 dotenv.config({ path: '../.env' });
 
-// Inisialisasi aplikasi Express
+// 3. Inisialisasi aplikasi Express
 const app = express();
-// Ambil nomor port dari file .env, atau gunakan 3000 jika tidak ditemukan
 const PORT = process.env.FRONTEND_PORT || 3000;
 
-// Konfigurasi View Engine untuk EJS
-// Memberitahu Express untuk menggunakan EJS sebagai template engine
-app.set('view engine', 'ejs');
-// Menentukan lokasi folder 'views' tempat file .ejs disimpan
-app.set('views', path.join(__dirname, 'views'));
+// 4. Buat variabel global 'apiBaseUrl' untuk semua halaman EJS
+// Ini akan dibaca dari file .env Anda
+app.locals.apiBaseUrl = `http://${process.env.APP_HOST_IP}:${process.env.BACKEND_PORT || 3001}`;
 
-// Middleware untuk menyajikan file statis
-// Membuat semua file di dalam folder 'public' dapat diakses dari browser
-// Contoh: file 'public/css/admin.css' bisa diakses melalui URL '/css/admin.css'
+// 5. Konfigurasi View Engine dan folder public (static)
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware untuk membaca data dari form (jika diperlukan)
+// Middleware untuk membaca data dari form
 app.use(express.urlencoded({ extended: true }));
 
 
 /*
 |--------------------------------------------------------------------------
-| Definisi Rute Halaman (Page Routes)
+| Definisi Semua Rute Halaman
 |--------------------------------------------------------------------------
-| Rute-rute ini bertanggung jawab untuk merender (menampilkan) file EJS
-| yang sesuai ketika pengguna mengakses URL tertentu.
 */
 
-// Rute utama (homepage), akan langsung diarahkan ke halaman login admin
+// Halaman utama, arahkan ke login
 app.get('/', (req, res) => {
     res.redirect('/admin/login');
 });
 
-// Rute untuk menampilkan halaman login admin
+// --- Rute Admin ---
 app.get('/admin/login', (req, res) => {
-    // Merender file 'views/admin/login.ejs'
     res.render('admin/login');
 });
-
-// Rute untuk menampilkan dashboard admin utama
 app.get('/admin/dashboard', (req, res) => {
-    // Merender file 'views/admin/dashboard.ejs'
-    // Autentikasi akan ditangani oleh JavaScript di sisi klien yang memanggil API backend
     res.render('admin/dashboard');
 });
-
 app.get('/admin/queues', (req, res) => {
     res.render('admin/queues');
 });
-
+app.get('/admin/currency', (req, res) => {
+    res.render('admin/currency');
+});
 app.get('/admin/videos', (req, res) => {
     res.render('admin/video');
 });
-
 app.get('/admin/settings', (req, res) => {
     res.render('admin/settings');
 });
 
+// --- Rute Teller ---
 app.get('/teller', (req, res) => {
     res.render('teller');
 });
 
-// Rute untuk menampilkan halaman teller
-app.get('/teller', (req, res) => {
-    // Merender file 'views/teller.ejs' (pastikan file ini ada)
-    res.render('teller');
-});
-
-// Rute untuk menampilkan halaman display publik
+// --- Rute Display ---
 app.get('/display', (req, res) => {
-    // Merender file 'views/display.ejs' (pastikan file ini ada)
     res.render('display');
 });
 
+// --- Rute Pengambilan Nomor ---
+app.get('/ambil-nomor', (req, res) => {
+    res.render('take-number');
+});
 
-// Menjalankan server dan mendengarkan koneksi yang masuk di port yang ditentukan
+
+// 6. Jalankan server di bagian paling akhir
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🖥️  Frontend server berjalan dengan lancar di http://localhost:${PORT}`);
+    console.log(`🖥️  Frontend server berjalan di http://localhost:${PORT} dan di jaringan Anda.`);
 });

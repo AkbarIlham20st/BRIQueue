@@ -10,7 +10,7 @@ exports.getDisplayData = async (req, res) => {
             db.query(`SELECT queue_number, status, teller_id FROM queues WHERE DATE(created_at) = CURRENT_DATE AND (status = 'Dipanggil' OR status = 'Selesai') ORDER BY called_at DESC NULLS LAST, id DESC LIMIT 3`),
             
             // 3. Ambil data kurs
-            db.query(`SELECT currency_code, buy_rate, sell_rate FROM currency_rates ORDER BY id ASC`),
+            db.query(`SELECT currency_code, buy_rate, sell_rate FROM currency_rates ORDER BY id ASC LIMIT 5`),
             
             // ✅ 4. Ambil teks informasi yang aktif
             db.query(`SELECT content_value FROM display_contents WHERE content_type = 'info' AND is_active = TRUE ORDER BY display_order ASC, id ASC`)

@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Identifikasi teller saat halaman dimuat
     const identify = async () => {
         try {
-            tellerInfo = await fetchApi('http://192.168.0.189:3001/api/teller/identify'); // IP WAJIB DI SESUAIKAN LAPTOP SERVER
+            tellerInfo = await fetchApi('http://192.168.1.73:3001/api/teller/identify'); // IP WAJIB DI SESUAIKAN LAPTOP SERVER
             tellerNameEl.textContent = `Selamat Datang, ${tellerInfo.name}`;
             callNextBtn.disabled = false; // Aktifkan tombol panggil
             fetchCurrentState();
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchCurrentState = async () => {
         if (!tellerInfo) return;
         try {
-            currentQueue = await fetchApi(`http://localhost:3001/api/teller/${tellerInfo.id}/current-queue`);
+            currentQueue = await fetchApi(`http://192.168.1.73:3001/api/teller/${tellerInfo.id}/current-queue`);
             updateUI();
         } catch (error) {
             console.error("Gagal fetch status:", error);
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners untuk Tombol Aksi
     callNextBtn.addEventListener('click', async () => {
         try {
-            const newQueue = await fetchApi('http://localhost:3001/api/queues/call-next', {
+            const newQueue = await fetchApi('http://192.168.1.73:3001/api/queues/call-next', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ teller_id: tellerInfo.id })
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     completeBtn.addEventListener('click', async () => {
         if (!currentQueue) return;
         try {
-            await fetchApi(`http://localhost:3001/api/queues/${currentQueue.id}/complete`, {
+            await fetchApi(`http://192.168.1.73:3001/api/queues/${currentQueue.id}/complete`, {
                 method: 'PUT'
             });
             currentQueue = null;

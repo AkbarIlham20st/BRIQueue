@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambil Nomor Antrian</title>
+    <link rel="icon" href="/images/briTAB.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/take-number.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <header class="card-header">
+                <img src="/images/logoBRI.png" alt="Logo Bank" class="logo">
+                <h1>Selamat Datang</h1>
+                <p>Silakan sentuh layar untuk mengambil nomor antrian Anda.</p>
+            </header>
+            <main class="card-body">
+                <button id="take-number-btn" class="take-number-button">
+                    <i class="fas fa-ticket-alt"></i>
+                    Ambil Nomor
+                </button>
+            </main>
+        </div>
+
+        <div id="ticket-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Nomor Antrian Anda</h2>
+                <div class="ticket">
+                    <p class="ticket-number" id="queue-number-display"></p>
+                </div>
+                <p class="modal-info">Terima kasih telah menunggu. Silakan simpan nomor antrian Anda.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.API_BASE_URL = "<%= apiBaseUrl %>";
+    </script>
+    <script src="/js/take-number.js"></script>
+</body>
+</html>

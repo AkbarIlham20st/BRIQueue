@@ -3,25 +3,22 @@ const db = require('../config/db');
 require('dotenv').config({ path: '../../.env' });
 
 const syncCurrencyRates = async () => {
-    console.log('\n--- [DEBUG SYNC] Memulai Proses Sinkronisasi Kurs ---');
+    console.log('[SYNC] Memulai sinkronisasi kurs mata uang...');
+
     try {
         const apiKey = process.env.EXCHANGERATE_API_KEY;
         if (!apiKey) {
-            console.error('[DEBUG SYNC-ERROR] API Key tidak ditemukan!');
+            console.error('[SYNC-ERROR] EXCHANGERATE_API_KEY tidak ditemukan di file .env');
             return;
         }
 
-        const apiUrl = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/IDR`;
-        console.log(`[DEBUG SYNC] Menghubungi API di: ${apiUrl}`);
-
-        const response = await axios.get(apiUrl);
+        const response = await axios.get(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/IDR`);
 
         if (response.data && response.data.result === 'success') {
-            console.log('[DEBUG SYNC] Berhasil mendapatkan data dari API.');
             const rates = response.data.conversion_rates;
             
+            // Definisikan mata uang yang Anda inginkan (misalnya 3 ini)
             const targetCurrencies = ['USD', 'SGD', 'JPY'];
-            console.log('[DEBUG SYNC] Mata uang target:', targetCurrencies);
 
             for (const currency of targetCurrencies) {
                 if (rates[currency]) {
@@ -29,22 +26,26 @@ const syncCurrencyRates = async () => {
                     const buyRate = idrPerUnit * 0.98;
                     const sellRate = idrPerUnit * 1.02;
 
-                    console.log(`[DEBUG SYNC] -> ${currency}: Jual=${sellRate.toFixed(2)}, Beli=${buyRate.toFixed(2)}`);
+                    // ✅ MENGGUNAKAN PERINTAH UPSERT (INSERT ON CONFLICT UPDATE)
+                    const upsertQuery = `
+                        INSERT INTO currency_rates (currency_code, buy_rate, sell_rate, updated_at)
+                        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+                        ON CONFLICT (currency_code) 
+                        DO UPDATE SET
+                            buy_rate = EXCLUDED.buy_rate,
+                            sell_rate = EXCLUDED.sell_rate,
+                            updated_at = CURRENT_TIMESTAMP;
+                    `;
 
-                    await db.query(
-                        'UPDATE currency_rates SET buy_rate = $1, sell_rate = $2, updated_at = CURRENT_TIMESTAMP WHERE currency_code = $3',
-                        [buyRate.toFixed(2), sellRate.toFixed(2), currency]
-                    );
-                } else {
-                    console.log(`[DEBUG SYNC-WARN] Mata uang ${currency} tidak ditemukan di respons API.`);
+                    await db.query(upsertQuery, [currency, buyRate.toFixed(2), sellRate.toFixed(2)]);
                 }
             }
-            console.log('[DEBUG SYNC] Proses selesai.');
+            console.log('[SYNC] Sinkronisasi kurs mata uang berhasil diselesaikan.');
         } else {
-            console.error('[DEBUG SYNC-ERROR] Respons API tidak sukses:', response.data);
+            console.error('[SYNC-ERROR] Respons dari API eksternal tidak valid.');
         }
     } catch (error) {
-        console.error('[DEBUG SYNC-FATAL] Terjadi error saat sinkronisasi:', error.message);
+        console.error('[SYNC-ERROR] Gagal melakukan sinkronisasi:', error.message);
     }
 };
 

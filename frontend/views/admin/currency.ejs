@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Kurs - Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h3><i class="fas fa-university"></i> Admin Panel</h3></div>
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/admin/queues"><i class="fas fa-users"></i> Kelola Antrian</a>
+                <a href="/admin/videos"><i class="fas fa-video"></i> Kelola Video</a>
+                <a href="/admin/currency" class="active"><i class="fas fa-dollar-sign"></i> Kelola Kurs</a>
+                <a href="/admin/settings"><i class="fas fa-cog"></i> Pengaturan</a>
+                <a href="/admin/logout" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Kelola Kurs Mata Uang</h1>
+                <p>Tambah, edit, dan hapus kurs yang akan ditampilkan di layar display.</p>
+            </header>
+            
+            <div class="content-body">
+                <div class="action-bar">
+                    <button id="add-rate-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Kurs Baru</button>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kode</th>
+                                <th>Harga Beli</th>
+                                <th>Harga Jual</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="currency-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="currency-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 id="modal-title">Tambah Kurs Baru</h3>
+            <form id="currency-form">
+                <input type="hidden" id="currency-id">
+                <div class="form-group">
+                    <label for="currency-code">Kode Mata Uang (3 huruf)</label>
+                    <input type="text" id="currency-code" maxlength="3" required>
+                </div>
+                <div class="form-group">
+                    <label for="currency-buy">Harga Beli</label>
+                    <input type="number" id="currency-buy" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="currency-sell">Harga Jual</label>
+                    <input type="number" id="currency-sell" step="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-notification" class="toast"></div>
+
+    <script>window.API_BASE_URL = "<%= apiBaseUrl %>";</script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/currency.js"></script>
+</body>
+</html>

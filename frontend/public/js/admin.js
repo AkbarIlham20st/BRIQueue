@@ -10,15 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     | Ini menghindari pengulangan kode.
     */
 
-    // Mengambil elemen yang ada di semua halaman admin
-    const logoutButton = document.querySelector('a[href="/admin/logout"]');
-
     /**
      * Fungsi pembungkus (wrapper) untuk fetch yang sudah dilengkapi autentikasi.
      * @param {string} url - URL API tujuan.
      * @param {object} options - Opsi tambahan untuk fetch (method, body, dll).
      * @returns {Promise<Response>} - Object Response dari fetch.
      */
+
+        // Mengambil elemen yang ada di semua halaman admin
+    const logoutButton = document.querySelector('a[href="/admin/logout"]');
+    
     async function fetchWithAuth(url, options = {}) {
         const defaultOptions = { credentials: 'include' };
         const response = await fetch(url, { ...defaultOptions, ...options });
@@ -44,7 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            await fetchWithAuth('http://localhost:3001/api/admin/logout', { method: 'POST' });
+            // Gunakan window.API_BASE_URL jika sudah didefinisikan
+            const baseUrl = window.API_BASE_URL || '';
+            await fetchWithAuth(`${baseUrl}/api/admin/logout`, { method: 'POST' });
             window.location.href = '/admin/login';
         } catch (error) {
             if (error.message !== 'Unauthorized') console.error('Gagal saat logout:', error);

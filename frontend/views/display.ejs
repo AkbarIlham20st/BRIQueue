@@ -1,78 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Favicon -->
-  <link rel="icon" href="/images/briTAB.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="/images/briTAB.ico" type="image/x-icon">
-  
-  <!-- Untuk browser modern -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/briTAB-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/briTAB-16.png">
-  
-  <!-- Untuk Apple devices -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/briTAB.png">
-  <title>Display Antrian</title>
-  <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Antrian BRI</title>
+    <link rel="icon" href="/images/briTAB.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/display.css">
 </head>
 <body>
-  <div class="display-container">
-    <!-- Header Section -->
-    <header class="display-header">
-      <div class="bank-logo">
-        <img src="/images/logoBRI.png" alt="Bank Logo">
-      </div>
-      <div class="bank-info">
-        <h1>Selamat Datang!</h1>
-        <div class="current-time" id="current-time"></div>
-      </div>
-    </header>
-    
-    <!-- Main Content -->
-    <div class="display-main">
-      <!-- Left Side: Queue Information -->
-      <div class="queue-section">
-        <h2>Antrian Saat Ini</h2>
-        <div class="active-queues" id="active-queues">
-          <!-- Queues will be populated by JavaScript -->
+    <div class="display-container">
+        <div class="video-background">
+            <video id="video-player" autoplay muted playsinline loop></video>
         </div>
-      </div>
-      
-      <!-- Right Side: Media Content -->
-      <div class="media-section">
-        <!-- Video Player -->
-        <div class="video-player">
-          <div id="video-container"></div>
-        </div>
-        
-        <!-- Currency Rates -->
-        <div class="currency-rates">
-          <h3>Kurs Mata Uang</h3>
-          <table id="currency-table">
-            <thead>
-              <tr>
-                <th>Mata Uang</th>
-                <th>Beli</th>
-                <th>Jual</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Rates will be populated by JavaScript -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Footer: Information Text -->
-    <footer class="info-footer">
-      <div class="info-text" id="info-text">
-        <!-- Information text will be populated by JavaScript -->
-      </div>
-    </footer>
-  </div>
 
-  <script src="/js/display.js"></script>
+        <div class="overlay-content">
+            <header class="display-header">
+                <div class="logo">
+                    <img src="/images/logoBRI.png" alt="Logo Bank BRI">
+                </div>
+                <div class="clock" id="current-time">
+                    <span id="time">00:00:00</span>
+                    <span id="date">Selasa, 7 Oktober 2025</span>
+                </div>
+            </header>
+
+            <aside class="display-sidebar">
+                <div class="current-call">
+                    <p>NOMOR ANTRIAN</p>
+                    <h1 id="current-queue-number">-</h1>
+                    <p id="current-teller">LOKET -</p>
+                </div>
+                <div class="last-calls">
+                    <ul id="last-calls-list"></ul>
+                </div>
+            </aside>
+
+            <footer class="display-footer">
+                <div class="currency-ticker">
+                    <ul id="currency-list">
+                        </ul>
+                </div>
+                <div class="info-ticker">
+                    <p id="info-text"></p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>window.API_BASE_URL = "<%= apiBaseUrl %>";</script>
+    <script src="/js/display.js"></script>
 </body>
 </html>
