@@ -40,25 +40,42 @@ exports.getAllQueues = async (req, res) => {
 
 // Fungsi untuk membuat antrian baru secara manual (Admin)
 exports.createNewQueue = async (req, res) => {
+    // 1. Terima input tipe layanan dari frontend ('teller' atau 'cs')
+    const { type } = req.body; 
+    
+    // 2. Tentukan Prefix (Awalan) berdasarkan tipe
+    // Default ke 'A' jika tidak ada tipe atau tipe = 'teller'
+    // Gunakan 'B' jika tipe = 'cs'
+    const prefix = (type === 'cs') ? 'B' : 'A';
+
     try {
+        // 3. Cari antrian terakhir HARI INI yang memiliki prefix tersebut
+        // Kita menggunakan pattern matching "LIKE" (contoh: 'A-%')
         const lastQueue = await db.query(
-            "SELECT queue_number FROM queues WHERE DATE(created_at) = CURRENT_DATE ORDER BY id DESC LIMIT 1"
+            "SELECT queue_number FROM queues WHERE queue_number LIKE $1 AND DATE(created_at) = CURRENT_DATE ORDER BY id DESC LIMIT 1",
+            [`${prefix}-%`] 
         );
         
         let newNumber = 1;
         if (lastQueue.rows.length > 0) {
+            // Ambil angka dari format "A-005" -> "005" -> 5
             const lastNumber = parseInt(lastQueue.rows[0].queue_number.split('-')[1]);
             newNumber = lastNumber + 1;
         }
 
-        const newQueueNumber = `A-${String(newNumber).padStart(3, '0')}`;
+        // 4. Format nomor baru (contoh: A-001 atau B-001)
+        const newQueueNumber = `${prefix}-${String(newNumber).padStart(3, '0')}`;
+
+        // 5. Simpan ke database
         const result = await db.query(
             "INSERT INTO queues (queue_number, status) VALUES ($1, 'Menunggu') RETURNING *",
             [newQueueNumber]
         );
         res.status(201).json(result.rows[0]);
+
     } catch (error) {
-        res.status(500).json({ message: 'Terjadi kesalahan server' });
+        console.error('Error creating queue:', error);
+        res.status(500).json({ message: 'Terjadi kesalahan server saat mengambil antrian.' });
     }
 };
 

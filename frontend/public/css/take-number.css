@@ -11,9 +11,15 @@ body {
 }
 
 .container {
-    max-width: 450px;
+    max-width: 1000px;
     width: 100%;
     padding: 20px;
+}
+
+.instruction {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 1.1em;
 }
 
 .card {
@@ -48,25 +54,41 @@ body {
     padding: 20px 40px 40px;
 }
 
+.button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dua kolom */
+    gap: 20px;
+}
+
 .take-number-button {
     width: 100%;
-    padding: 25px;
-    font-size: 1.8em;
-    font-weight: 600;
-    color: white;
-    background-color: #27ae60;
+    padding: 30px 20px;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
+    flex-direction: column; /* Ikon di atas teks */
     align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 10px;
+    color: white;
 }
 
 .take-number-button:hover {
     background-color: #2ecc71;
+}
+
+.take-number-button span {
+    font-size: 1.4em;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.take-number-button small {
+    font-size: 0.8em;
+    opacity: 0.9;
+    font-weight: 400;
 }
 
 .take-number-button:active {
@@ -122,4 +144,22 @@ body {
 
 .modal-info {
     color: #666;
+}
+
+/* Warna Khusus */
+.btn-teller {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+}
+
+.btn-cs {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+}
+
+/* Responsif untuk layar HP */
+@media (max-width: 600px) {
+    .button-grid {
+        grid-template-columns: 1fr; /* Satu kolom di HP */
+    }
 }

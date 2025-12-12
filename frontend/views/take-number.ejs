@@ -17,10 +17,21 @@
                 <p>Silakan sentuh layar untuk mengambil nomor antrian Anda.</p>
             </header>
             <main class="card-body">
-                <button id="take-number-btn" class="take-number-button">
-                    <i class="fas fa-ticket-alt"></i>
-                    Ambil Nomor
-                </button>
+                <p class="instruction">Pilih layanan yang Anda butuhkan:</p>
+                
+                <div class="button-grid">
+                    <button class="take-number-button btn-teller" onclick="ambilAntrian('teller')">
+                        <i class="fas fa-money-bill-wave fa-2x"></i>
+                        <span>TELLER</span>
+                        <small>Setor Tunai, Tarik Tunai, dll</small>
+                    </button>
+
+                    <button class="take-number-button btn-cs" onclick="ambilAntrian('cs')">
+                        <i class="fas fa-user-tie fa-2x"></i>
+                        <span>CUSTOMER SERVICE</span>
+                        <small>Buka Rekening, Pengaduan, dll</small>
+                    </button>
+                </div>
             </main>
         </div>
 
